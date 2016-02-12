@@ -11,7 +11,7 @@ Gem::Specification.new do |spec|
 
   spec.summary       = %q{Rails form parser}
   spec.description   = %q{Framework for intuitively parsing Rails forms}
-  spec.homepage      = "https://github.com/francirp/params_transformer"
+  spec.homepage      = "https://github.com/launchpadlab/params_transformer"
   spec.license       = "MIT"
 
   # Prevent pushing this gem to RubyGems.org by setting 'allowed_push_host', or
