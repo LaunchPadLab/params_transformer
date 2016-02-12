@@ -4,7 +4,7 @@ module ParamsTransformer
       REGEX = /(\d|[.])/
 
       def parse
-        return 0 unless input_value.present?
+        return nil unless input_value.present?
         return input_value if input_value.is_a?(Fixnum)
         return input_value.to_i if input_value.is_a?(Float)
         input_value.scan(REGEX).join.try(:to_i)

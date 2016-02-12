@@ -14,8 +14,8 @@ module ParamsTransformer
       # }
       def parse
         return input_value unless input_value.present?
-        parse_hash if input_value.is_a?(Hash)
-        parse_array if input_value.is_a?(Array)
+        return parse_hash if input_value.is_a?(Hash)
+        return parse_array if input_value.is_a?(Array)
       end
 
       def parse_hash
