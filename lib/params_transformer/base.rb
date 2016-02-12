@@ -1,5 +1,5 @@
 module ParamsTransformer
-  class Transformer
+  class Base
     attr_reader :params, :inputs
     attr_accessor :inputs
 
