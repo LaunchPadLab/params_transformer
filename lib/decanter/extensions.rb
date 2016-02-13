@@ -28,8 +28,8 @@ module Decanter
       end
 
       private
-        def decant(args)
-          decanter_for(self).decant(args)
+        def decant(args, context)
+          decanter_for(self).decant(args, context)
         end
     end
   end
