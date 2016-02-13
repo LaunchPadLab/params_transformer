@@ -1,5 +1,3 @@
-# require 'value_parser/core'
-
 module Decanter
   module ValueParser
     class Base
