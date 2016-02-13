@@ -3,6 +3,7 @@ module Decanter
 
     def self.included(base)
       base.extend(ClassMethods)
+      Decanter.register(base)
     end
 
     module ClassMethods
@@ -18,28 +19,23 @@ module Decanter
       end
 
       def with_context(context, &block)
+        raise NameError.new('no context argument provided to with_context') unless context
+
         @context = context
         block.arity.zero? ? instance_eval(&block) : block.call(self)
         @context = nil
       end
 
-      def decant(args)
-        context = args[:context] || :default
-        context_inputs = inputs[context]
+      def decant(args={}, context=nil)
+        context_inputs = inputs[context || :default]
         Hash[
-          args.reject { |k,v| k == :context }
-              .select { |k,v| context_inputs && context_inputs.has_key?(k) }
+          args.select { |k,v| context_inputs && context_inputs.has_key?(k) }
               .map    { |k,v| [k, parse(context_inputs[k], v)] }
         ]
       end
 
       def parse(type, val)
-        parser = ObjectSpace.each_object(Class)
-                            .detect { |klass| klass      <  ValueParser &&
-                                              klass.name == "#{type.to_s.capitalize}Parser" }
-
-        raise NameError.new("unknown value parser: #{type}") unless parser
-        parser.parse(val)
+        ValueParser.value_parser_for(type).parse(val)
       end
     end
   end

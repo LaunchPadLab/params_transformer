@@ -18,6 +18,13 @@ describe Decanter::Core do
 
   describe '#with_options' do
 
+    context 'when no context argument is provided' do
+      it 'raises a name error' do
+        expect { dummy.with_context(nil) { } }
+          .to raise_error(NameError, 'no context argument provided to with_context')
+      end
+    end
+
     context 'with an argument' do
       it 'add inputs with the specified context' do
         dummy.with_context :foo do |d|
@@ -41,36 +48,34 @@ describe Decanter::Core do
 
   describe '#parse' do
 
-    context 'for a parser that exists' do
+    let(:parser) { double("parser", parse: nil) }
 
-      before(:each) do
-        Object.const_set('FooParser', Class.new(Decanter::ValueParser))
-        allow(FooParser).to receive(:parse)
-      end
-
-      it 'calls parse on the parser with the value' do
-        dummy.parse(:foo, 'bar')
-        expect(FooParser).to have_received(:parse).with('bar')
-      end
+    before(:each) do
+      allow(Decanter::ValueParser)
+        .to receive(:value_parser_for)
+        .and_return(parser)
     end
 
-    context 'for a parser that does not exist' do
-      it 'throws a name error' do
-        expect { dummy.parse(:baz, 'bar') }
-          .to raise_error(NameError, "unknown value parser: #{:baz}")
-      end
+    it 'calls Decanter::ValueParser.value_parser_for with the given type' do
+      dummy.parse(:foo, 'bar')
+      expect(Decanter::ValueParser).to have_received(:value_parser_for).with(:foo)
+    end
+
+    it 'calls parse with the given value on the found parser' do
+      dummy.parse(:foo, 'bar')
+      expect(parser).to have_received(:parse).with('bar')
     end
   end
 
   describe '#decant' do
 
     before(:each) do
-      allow(dummy).to receive(:parse)
+      allow(dummy).to receive(:parse) { |type, val| val }
     end
 
     it 'ignores fields without inputs' do
       dummy.decant({first_name: 'Dave'})
-      expect(dummy).to_not have_received(:parse)
+      expect(dummy.decant({first_name: 'Dave'})).to match({})
     end
 
     context 'with default context' do
@@ -80,16 +85,14 @@ describe Decanter::Core do
       end
 
       context 'when context is not specified in the args' do
-        it 'calls parse with the input type and value' do
-          dummy.decant({first_name: 'Dave'})
-          expect(dummy).to have_received(:parse).with(:string, 'Dave')
+        it 'returns the parsed value' do
+          expect(dummy.decant({first_name: 'Dave'})).to match({first_name: 'Dave'})
         end
       end
 
       context 'when context is specified in the args' do
-        it 'does not call parse with the input type and value' do
-          dummy.decant({context: :baz, first_name: 'Dave'})
-          expect(dummy).to_not have_received(:parse)
+        it 'ignores the field' do
+          expect(dummy.decant({first_name: 'Dave'}, :baz)).to match({})
         end
       end
     end
@@ -101,16 +104,14 @@ describe Decanter::Core do
       end
 
       context 'when context is specified in the args' do
-        it 'calls parse with the input type and value' do
-          dummy.decant({context: :baz, first_name: 'Dave'})
-          expect(dummy).to have_received(:parse).with(:string, 'Dave')
+        it 'returns the parsed value' do
+          expect(dummy.decant({first_name: 'Dave'}, :baz)).to match({first_name: 'Dave'})
         end
       end
 
       context 'when context is not specified in the args' do
-        it 'does not call parse' do
-          dummy.decant({first_name: 'Dave'})
-          expect(dummy).to_not have_received(:parse)
+        it 'ignores the field' do
+          expect(dummy.decant({first_name: 'Dave'})).to match({})
         end
       end
     end

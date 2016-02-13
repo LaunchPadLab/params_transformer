@@ -7,15 +7,30 @@ module Decanter
 
     module ClassMethods
 
-      def decant(args)
-        decanter = ObjectSpace.each_object(Class)
-                              .detect { |klass| klass      <  Decanter::Base &&
-                                                klass.name == "#{self.name}Decanter" }
-
-        raise NameError.new("unknown decanter #{self.name}Decanter") unless decanter
-
-        self.new(decanter.decant(args))
+      def decant_update(args={}, context=nil)
+        self.attributes = decant(args, context)
+        self.save(context: context)
       end
+
+      def decant_update!(args={}, context=nil)
+        self.attributes = decant(args, context)
+        self.save!(context: context)
+      end
+
+      def decant_create(args={}, context=nil)
+        self.new(decant(args, context))
+        self.save(context: context)
+      end
+
+      def decant_create!(args={}, context=nil)
+        self.new(decant(args, context))
+        self.save!(context: context)
+      end
+
+      private
+        def decant(args)
+          decanter_for(self).decant(args)
+        end
     end
   end
 end
