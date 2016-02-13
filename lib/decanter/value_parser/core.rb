@@ -1,13 +1,16 @@
 module Decanter
   module ValueParser
+    module Core
+      def self.included(base)
+        base.extend(ClassMethods)
+        ValueParser.register(base)
+      end
 
-    def self.included(base)
-      base.extend(ClassMethods)
-      ValueParser.register(base)
-    end
-
-    def self.parse(val)
-      val
+      module ClassMethods
+        def parse(val)
+          val
+        end
+      end
     end
   end
 end

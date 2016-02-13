@@ -1,4 +1,4 @@
-require 'value_parser/core'
+# require 'value_parser/core'
 
 module Decanter
   module ValueParser
