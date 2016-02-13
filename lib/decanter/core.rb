@@ -34,7 +34,7 @@ module Decanter
 
       def has_many(name, **options)
         set_association options, {
-          key:     options[:key] || "#{name}_attributes",
+          key:     options[:key] || "#{name}_attributes".to_sym,
           name:    name,
           options: options.reject { |k| k == :context },
           type:    :has_many
@@ -43,21 +43,21 @@ module Decanter
 
       def has_one(name, **options)
         set_association options, {
-          key:     options[:key] || "#{name}_attributes",
+          key:     options[:key] || "#{name}_attributes".to_sym,
           name:    name,
           options: options.reject { |k| k == :context },
           type:    :has_one
         }
       end
 
-      def has_many_for(name, context)
+      def has_many_for(key, context)
         (associations[context || :default] || {})
-          .select { |key, assoc| assoc[:type] == :has_many }[name]
+          .detect { |name, assoc| assoc[:type] == :has_many && assoc[:key] == key}
       end
 
-      def has_one_for(name, context)
+      def has_one_for(key, context)
         (associations[context || :default] || {})
-          .select { |key, assoc| assoc[:type] == :has_one }[name]
+          .detect { |name, assoc| assoc[:type] == :has_one && assoc[:key] == key}
       end
 
       def set_association(options, assoc)
@@ -89,10 +89,10 @@ module Decanter
         when input_cfg = input_for(name, context)
           [name, parse(input_cfg[:type], value)]
         when assoc = has_one_for(name, context)
-          [name, decanter_for(assoc).decant(value, context)]
+          [assoc.pop[:key], Decanter::decanter_for(assoc.first).decant(value, context)]
         when assoc = has_many_for(name, context)
-          decanter = decanter_for(assoc)
-          [name, value.map { |val| decanter.decant(val, context) }]
+          decanter = Decanter::decanter_for(assoc.first)
+          [assoc.pop[:key], value.map { |val| decanter.decant(val, context) }]
         else
           context ? nil : [name, value]
         end

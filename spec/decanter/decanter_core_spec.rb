@@ -91,6 +91,60 @@ describe Decanter::Core do
     end
   end
 
+  describe '#has_one' do
+
+    it 'adds a has_one association with the default context' do
+      dummy.has_one :profile
+      expect(dummy.associations).to include(default: {
+        profile: {
+          key:  :profile_attributes,
+          name: :profile,
+          type: :has_one,
+          options: {}
+        }
+      })
+    end
+
+    it 'adds an input with the specified context' do
+      dummy.has_one :profile, context: :foo
+      expect(dummy.associations).to include(foo: {
+        profile: {
+          key:  :profile_attributes,
+          name: :profile,
+          type: :has_one,
+          options: {}
+        }
+      })
+    end
+  end
+
+  describe '#has_many' do
+
+    it 'adds a has_one association with the default context' do
+      dummy.has_many :profiles
+      expect(dummy.associations).to include(default: {
+        profiles: {
+          key:  :profiles_attributes,
+          name: :profiles,
+          type: :has_many,
+          options: {}
+        }
+      })
+    end
+
+    it 'adds an input with the specified context' do
+      dummy.has_many :profiles, context: :foo
+      expect(dummy.associations).to include(foo: {
+        profiles: {
+          key:  :profiles_attributes,
+          name: :profiles,
+          type: :has_many,
+          options: {}
+        }
+      })
+    end
+  end
+
   describe '#parse' do
 
     let(:parser) { double("parser", parse: nil) }
@@ -119,6 +173,8 @@ describe Decanter::Core do
       dummy.input :first_name, :string
       dummy.input :last_name,  :string, context: :foo
       dummy.input :phone,      :string, context: :bar
+      dummy.has_one :profile, context: :foo
+      dummy.has_many :photos, context: :foo
     end
 
     context 'without context' do
@@ -161,48 +217,44 @@ describe Decanter::Core do
           expect(dummy.decant({phone: '123456789'}, :foo)).to match({})
         end
       end
+
+      context 'for an argument with a has_one association for that context' do
+
+        before(:each) do
+          foo = Class.new do
+            def self.name
+              'ProfileDecanter'
+            end
+          end
+          foo.include Decanter::Core
+          foo.input :is_cool, :boolean, context: :foo
+          allow(foo).to receive(:parse) { |type, val| val }
+        end
+
+        it 'includes the field' do
+          expect(dummy.decant({profile_attributes: { is_cool: false } }, :foo))
+            .to match({profile_attributes: { is_cool: false } })
+        end
+      end
+
+      context 'for an argument with a has_many association for that context' do
+
+        before(:each) do
+          foo = Class.new do
+            def self.name
+              'PhotoDecanter'
+            end
+          end
+          foo.include Decanter::Core
+          foo.input :title, :string, context: :foo
+          allow(foo).to receive(:parse) { |type, val| val }
+        end
+
+        it 'includes the field' do
+          expect(dummy.decant({photos_attributes: [{title: 'foobar'}, {title: 'baz'}] }, :foo))
+            .to match({photos_attributes: [{title: 'foobar'}, {title: 'baz'}] })
+        end
+      end
     end
-    # it 'ignores fields without inputs' do
-    #   dummy.decant({first_name: 'Dave'})
-    #   expect(dummy.decant({first_name: 'Dave'})).to match({})
-    # end
-
-    # context 'with default context' do
-
-    #   before(:each) do
-    #     dummy.input :first_name, :string
-    #   end
-
-    #   context 'when context is not specified' do
-    #     it 'returns the value' do
-    #       expect(dummy.decant({first_name: 'Dave'})).to match({first_name: 'Dave'})
-    #     end
-    #   end
-
-    #   context 'when context is specified in the args' do
-    #     it 'ignores the field' do
-    #       expect(dummy.decant({first_name: 'Dave'}, :baz)).to match({})
-    #     end
-    #   end
-    # end
-
-    # context 'when context configured' do
-
-    #   before(:each) do
-    #     dummy.input :first_name, :string, context: :baz
-    #   end
-
-    #   context 'when context is specified in the args' do
-    #     it 'returns the parsed value' do
-    #       expect(dummy.decant({first_name: 'Dave'}, :baz)).to match({first_name: 'Dave'})
-    #     end
-    #   end
-
-    #   context 'when context is not specified in the args' do
-    #     it 'ignores the field' do
-    #       expect(dummy.decant({first_name: 'Dave'})).to match({})
-    #     end
-    #   end
-    # end
   end
 end
