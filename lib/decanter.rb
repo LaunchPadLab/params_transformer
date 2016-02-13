@@ -6,11 +6,16 @@ module Decanter
     @@decanters[decanter.name] = decanter
   end
 
-  def self.decanter_for(klass)
-    @@decanters["#{klass.name}Decanter"] || (raise NameError.new("unknown decanter #{klass.name}Decanter"))
+  def self.decanter_for(klass_or_sym)
+    name = klass_or_sym.is_a?(Class) ?
+            klass_or_sym.name :
+            klass_or_sym.to_s.singularize.capitalize
+
+    @@decanters["#{name}Decanter"] || (raise NameError.new("unknown decanter #{name}Decanter"))
   end
 end
 
+require 'active_support/inflector'
 require 'decanter/base'
 require 'decanter/core'
 require 'decanter/extensions'

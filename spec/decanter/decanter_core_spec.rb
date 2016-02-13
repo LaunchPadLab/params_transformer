@@ -2,17 +2,40 @@ require 'spec_helper'
 
 describe Decanter::Core do
 
+  before(:each) do
+    Decanter::Core.class_variable_set(:@@inputs, {})
+    Decanter::Core.class_variable_set(:@@associations, {})
+  end
+
+  after(:each) do
+    Decanter::Core.class_variable_set(:@@inputs, {})
+    Decanter::Core.class_variable_set(:@@associations, {})
+  end
+
   let(:dummy) { Class.new { include Decanter::Core } }
 
   describe '#input' do
+
     it 'adds an input with the default context' do
-      dummy.input :name, :string
-      expect(dummy.inputs).to include(default: {name: :string})
+      dummy.input :first_name, :string
+      expect(dummy.inputs).to include(default: {
+        first_name: {
+          name: :first_name,
+          type: :string,
+          options: {}
+        }
+      })
     end
 
     it 'adds an input with the specified context' do
-      dummy.input :name, :string, context: :foo
-      expect(dummy.inputs).to include(foo: {name: :string})
+      dummy.input :first_name, :string, context: :foo
+      expect(dummy.inputs).to include(foo: {
+        first_name: {
+          name: :first_name,
+          type: :string,
+          options: {}
+        }
+      })
     end
   end
 
@@ -31,7 +54,18 @@ describe Decanter::Core do
           d.input :first_name, :string
           d.input :last_name,  :integer
         end
-        expect(dummy.inputs).to include(foo: {first_name: :string, last_name: :integer})
+        expect(dummy.inputs).to include(foo: {
+          first_name: {
+            name: :first_name,
+            type: :string,
+            options: {}
+          },
+          last_name: {
+            name: :last_name,
+            type: :integer,
+            options: {}
+          }
+        })
       end
     end
 
@@ -41,7 +75,18 @@ describe Decanter::Core do
           input :first_name, :string
           input :last_name,  :integer
         end
-        expect(dummy.inputs).to include(foo: {first_name: :string, last_name: :integer})
+        expect(dummy.inputs).to include(foo: {
+          first_name: {
+            name: :first_name,
+            type: :string,
+            options: {}
+          },
+          last_name: {
+            name: :last_name,
+            type: :integer,
+            options: {}
+          }
+        })
       end
     end
   end
@@ -71,49 +116,93 @@ describe Decanter::Core do
 
     before(:each) do
       allow(dummy).to receive(:parse) { |type, val| val }
+      dummy.input :first_name, :string
+      dummy.input :last_name,  :string, context: :foo
+      dummy.input :phone,      :string, context: :bar
     end
 
-    it 'ignores fields without inputs' do
-      dummy.decant({first_name: 'Dave'})
-      expect(dummy.decant({first_name: 'Dave'})).to match({})
-    end
+    context 'without context' do
 
-    context 'with default context' do
-
-      before(:each) do
-        dummy.input :first_name, :string
+      context 'for an argument without an input' do
+        it 'includes the field' do
+          expect(dummy.decant({nickname: 'dc'})).to match({nickname: 'dc'})
+        end
       end
 
-      context 'when context is not specified in the args' do
-        it 'returns the parsed value' do
+      context 'for an argument an input' do
+        it 'includes the field' do
           expect(dummy.decant({first_name: 'Dave'})).to match({first_name: 'Dave'})
         end
       end
+    end
 
-      context 'when context is specified in the args' do
-        it 'ignores the field' do
-          expect(dummy.decant({first_name: 'Dave'}, :baz)).to match({})
+    context 'with context' do
+
+      context 'for an argument without an input' do
+        it 'does not include the field' do
+          expect(dummy.decant({nickname: 'dc'}, :foo)).to match({})
+        end
+      end
+
+      context 'for an argument with an input in the default context' do
+        it 'does not include the field' do
+          expect(dummy.decant({first_name: 'Dave'}, :foo)).to match({})
+        end
+      end
+
+      context 'for an argument with an input for that context' do
+        it 'includes the field' do
+          expect(dummy.decant({last_name: 'Corwin'}, :foo)).to match({last_name: 'Corwin'})
+        end
+      end
+
+      context 'for an argument with an input for a different context' do
+        it 'includes the field' do
+          expect(dummy.decant({phone: '123456789'}, :foo)).to match({})
         end
       end
     end
+    # it 'ignores fields without inputs' do
+    #   dummy.decant({first_name: 'Dave'})
+    #   expect(dummy.decant({first_name: 'Dave'})).to match({})
+    # end
 
-    context 'when context configured' do
+    # context 'with default context' do
 
-      before(:each) do
-        dummy.input :first_name, :string, context: :baz
-      end
+    #   before(:each) do
+    #     dummy.input :first_name, :string
+    #   end
 
-      context 'when context is specified in the args' do
-        it 'returns the parsed value' do
-          expect(dummy.decant({first_name: 'Dave'}, :baz)).to match({first_name: 'Dave'})
-        end
-      end
+    #   context 'when context is not specified' do
+    #     it 'returns the value' do
+    #       expect(dummy.decant({first_name: 'Dave'})).to match({first_name: 'Dave'})
+    #     end
+    #   end
 
-      context 'when context is not specified in the args' do
-        it 'ignores the field' do
-          expect(dummy.decant({first_name: 'Dave'})).to match({})
-        end
-      end
-    end
+    #   context 'when context is specified in the args' do
+    #     it 'ignores the field' do
+    #       expect(dummy.decant({first_name: 'Dave'}, :baz)).to match({})
+    #     end
+    #   end
+    # end
+
+    # context 'when context configured' do
+
+    #   before(:each) do
+    #     dummy.input :first_name, :string, context: :baz
+    #   end
+
+    #   context 'when context is specified in the args' do
+    #     it 'returns the parsed value' do
+    #       expect(dummy.decant({first_name: 'Dave'}, :baz)).to match({first_name: 'Dave'})
+    #     end
+    #   end
+
+    #   context 'when context is not specified in the args' do
+    #     it 'ignores the field' do
+    #       expect(dummy.decant({first_name: 'Dave'})).to match({})
+    #     end
+    #   end
+    # end
   end
 end
