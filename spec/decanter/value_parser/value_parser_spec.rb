@@ -7,8 +7,13 @@ describe Decanter::ValueParser do
     after(:each) { Decanter::ValueParser.class_variable_set(:@@value_parsers, {}) }
 
     it 'adds the class to the array of value_parsers' do
-      Decanter::ValueParser.register(String)
-      expect(Decanter::ValueParser.class_variable_get(:@@value_parsers)).to match({'String' => String})
+      foo = Class.new do
+        def self.name
+          'Foo'
+        end
+      end
+      Decanter::ValueParser.register(foo)
+      expect(Decanter::ValueParser.class_variable_get(:@@value_parsers)).to match({'Foo' => foo})
     end
   end
 

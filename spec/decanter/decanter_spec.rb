@@ -7,8 +7,13 @@ describe Decanter do
     after(:each) { Decanter.class_variable_set(:@@decanters, {}) }
 
     it 'adds the class to the array of decanters' do
-      Decanter.register(String)
-      expect(Decanter.class_variable_get(:@@decanters)).to match({'String' => String})
+      foo = Class.new do
+        def self.name
+          'Foo'
+        end
+      end
+      Decanter.register(foo)
+      expect(Decanter.class_variable_get(:@@decanters)).to match({'Foo' => foo})
     end
   end
 
